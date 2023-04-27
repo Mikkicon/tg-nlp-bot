@@ -52,6 +52,11 @@ provider:
 #    variable1: value1
 
 # you can add packaging information here
+
+package:
+  exclude:
+    - node_modules/**
+    - briefr/**
 #package:
 #  patterns:
 #    - '!exclude-me.py'

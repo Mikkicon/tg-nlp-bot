@@ -16,6 +16,9 @@ var/
 .installed.cfg
 *.egg
 __pycache__
+briefr
+
+source.sh
 
 # Serverless directories
 .serverless

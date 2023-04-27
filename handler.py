@@ -16,29 +16,36 @@ print('telegram_token len', len(telegram_token))
 # source ./source.sh
 
 def webhook(request):
-    print('request', request)
-    print('request.json', request.json)
+    try:
+        print('request', request)
+        print('request.json', request.json)
 
-    body = request.json
-    message = get_message(body)
-    chat_id = body['message']['chat']['id']
+        body = request.json
+        message = get_message(body)
+        chat_id = body['message']['chat']['id']
 
-    if 'MY_MODEL' in os.environ:
-        my_t5_prediction = get_my_t5_prefiction(message)
-        print(my_t5_prediction)
-        send_to_bot(my_t5_prediction, chat_id)
-    if 'T5_MODEL' in os.environ:
-        t5_prediction = get_t5_prefiction(message)
-        print(t5_prediction)
-        send_to_bot(t5_prediction, chat_id)
-    if 'OPENAI_MODEL' in os.environ:
-        openai_prediction = get_openai_prediction(message)
-        print(openai_prediction)
-        send_to_bot(openai_prediction, chat_id)
+        if 'MY_MODEL' in os.environ:
+            my_t5_prediction = get_my_t5_prefiction(message)
+            print(my_t5_prediction)
+            send_to_bot(my_t5_prediction, chat_id)
+        if 'T5_MODEL' in os.environ:
+            t5_prediction = get_t5_prefiction(message)
+            print(t5_prediction)
+            send_to_bot(t5_prediction, chat_id)
+        if 'OPENAI_MODEL' in os.environ:
+            openai_prediction = get_openai_prediction(message)
+            print(openai_prediction)
+            send_to_bot(openai_prediction, chat_id)
 
-    response_body = {"message": "SUCCESS", "request_data": str(request.data), "message": message}
-    response = { "statusCode": 200, "body": json.dumps(response_body)}
-    return response
+        response_body = {"message": "SUCCESS", "request_data": str(request.data), "message": message}
+        response = { "statusCode": 200, "body": json.dumps(response_body)}
+        return response
+    except Exception:
+        send_to_bot("ERROR: couldn't process", chat_id)
+        response_body = {"message": "EXCEPTION", "request_data": str(request.data)}
+        response = { "statusCode": 400, "body": json.dumps(response_body)}
+        return response
+
 
 def get_message(body):
     text = body['message']['text']
@@ -48,18 +55,17 @@ def get_message(body):
     return text
 
 def get_my_t5_prefiction(input_text):
-    my_model = AutoModelForSeq2SeqLM.from_pretrained(f"mikkicon/t5-small_tuned_on_billsum")
-    tokenizer = AutoTokenizer.from_pretrained("t5-small")
-    input_ids = tokenizer(get_prompt(input_text), return_tensors="pt").input_ids  
-    outputs = my_model.generate(input_ids)
-    return "MY MODEL:\n\n" + tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return "MY MODEL:\n\n" + get_huggingface_prefiction(model_name=f"mikkicon/t5-small_tuned_on_billsum", tokenizer_name="t5-small", input_text=input_text)
 
 def get_t5_prefiction(input_text):
-    model = AutoModelForSeq2SeqLM.from_pretrained("t5-small")
-    tokenizer = AutoTokenizer.from_pretrained("t5-small")
+    return "T5 MODEL:\n\n" + get_huggingface_prefiction(model_name=f"t5-small", tokenizer_name="t5-small", input_text=input_text)
+
+def get_huggingface_prefiction(model_name, tokenizer_name, input_text):
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     input_ids = tokenizer(get_prompt(input_text), return_tensors="pt").input_ids  
-    outputs = model.generate(input_ids)
-    return "T5 MODEL:\n\n" + tokenizer.decode(outputs[0], skip_special_tokens=True)
+    outputs = model.generate(input_ids, max_length=100, min_length=50)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 def get_openai_prediction(input_text):
     openai.api_key=openai_token
