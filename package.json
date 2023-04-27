@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "sls:deploy":"sls package && sls deploy",
+    "tg:set-webhook": "curl --request POST --url https://api.telegram.org/bot\"$TG_BOT_TOKEN\"/setWebhook --header 'content-type: application/json' --data '{\"url\": \"https://qljxxhs8ui.execute-api.eu-central-1.amazonaws.com/dev/webhook\"}'",
+    "tg:webhook-info": "curl https://api.telegram.org/bot${TG_BOT_TOKEN}/getWebhookInfo",
+    "sls:offline": "sls invoke local --function webhook --path mock-tg-event.json"
+  },
+
+  "devDependencies": {
+    "serverless-python-requirements": "^6.0.0"
+  }
+}
